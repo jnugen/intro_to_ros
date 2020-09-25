@@ -48,7 +48,7 @@ This version adds the transform for a Raspicam using the raspicam_node by ubiqui
   </node>
  
   <!-- publish teh URDF -->
-  <param name="robot_description" command="$(find xacro)/xacro.py $(find neato_node)/urdf/neato.urdf.xacro" />
+  <param name="robot_description" command="$(find xacro)/xacro $(find neato_node)/urdf/neato.urdf.xacro" />
 
   <!-- publish the robot state transforms -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" output="screen" >

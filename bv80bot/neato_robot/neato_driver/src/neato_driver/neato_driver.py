@@ -156,7 +156,7 @@ class Botvac():
         self.setLDS("on")
 
         time.sleep(0.5)
-        self.setLed("ledgreen")
+        #self.setLed("ledgreen") #doesn't exist on Botvac Connected
 
         self.base_width = BASE_WIDTH
         self.max_speed = MAX_SPEED
@@ -341,7 +341,7 @@ class Botvac():
             self.flush()
             return
 
-        last =False
+        last = False
         while not last: #for i in range(len(xv11_charger_info)):
 
             vals,last = self.getResponse()
@@ -366,7 +366,7 @@ class Botvac():
 
     def sendCmd(self,cmd):
         #rospy.loginfo("Sent command: %s"%cmd)
-        self.port.write("%s\n" % cmd)
+        self.port.write(F"{cmd}\n".encode())
 
     def readTo(self,tag,timeout=1):
         try:
@@ -374,13 +374,13 @@ class Botvac():
         except:
             return False
 
-        if line=="":
+        if line == "":
             return False
 
         while line.split(",")[0] != tag:
             try:
                 line,last = self.getResponse(timeout)
-                if line=="":
+                if line == "":
                     return False
             except:
                 return False
@@ -392,46 +392,39 @@ class Botvac():
     # when an end of response (^Z) is read, adds the complete list of response lines to self.responseData and resets the comsData list for the next command response.
     def read(self):
         self.reading = True
-        line=""
+        line = bytearray()
 
         while(self.reading and not rospy.is_shutdown()):
             try:
                val = self.port.read(1) # read from serial 1 char at a time so we can parse each character
             except Exception as ex:
                 rospy.logerr("Exception Reading Neato Serial: " + str(ex))
-                val=[]
+                val = b''
 
             if len(val) > 0:
-
-                '''
-                if ord(val[0]) < 32:
-                    print("'%s'"% hex(ord(val[0])))
-                else:
-                    print ("'%s'"%str(val))
-                '''
-
-                if ord(val[0]) ==13: # ignore the CRs
+                if val == b'\r': # ignore the CRs
                     pass
 
-                elif ord(val[0]) == 26: # ^Z (end of response)
+                elif val == b'\x1a': # ^Z (end of response)
                     if len(line) > 0:
-                        self.comsData.append(line) # add last line to response set if it is not empty
-                        #print("Got Last Line: %s" % line)
-                        line="" # clear the line buffer for the next line
+                        self.comsData.append(line.decode()) # add last line to response set if it is not empty
+                        #print(F"Got Last Line: {line}")
+                        line = b'' # clear the line buffer for the next line
 
-                    #print ("Got Last")
+                    #print("Got Last")
                     with self.readLock: # got the end of the command response so add the full set of response data as a new item in self.responseData
                         self.responseData.append(list(self.comsData))
 
                     self.comsData = [] # clear the bucket for the lines of the next command response
 
-                elif ord(val[0]) == 10: # NL, terminate the current line and add it to the response data list (comsData) (if it is not a blank line)
+                elif val == b'\n': # NL, terminate the current line and add it to the response data list (comsData) (if it is not a blank line)
                     if len(line) > 0:
-                        self.comsData.append(line)
-                        #print("Got Line: %s" % line)
-                        line = "" # clear the bufer for the next line
+                        self.comsData.append(line.decode())
+                        #print(F"Got Last Line: {line}")
+                        line = b'' # clear the bufer for the next line
+
                 else:
-                    line=line+val # add the character to the current line buffer
+                    line += val # add the character to the current line buffer
 
     # read response data for a command
     # returns tuple (line,last)
