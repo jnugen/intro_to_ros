@@ -366,7 +366,7 @@ class Botvac():
 
     def sendCmd(self,cmd):
         #rospy.loginfo("Sent command: %s"%cmd)
-        self.port.write(F"{cmd}\n".encode())
+        self.port.write(b"%s\n" % cmd)
 
     def readTo(self,tag,timeout=1):
         try:
@@ -408,7 +408,7 @@ class Botvac():
                 elif val == b'\x1a': # ^Z (end of response)
                     if len(line) > 0:
                         self.comsData.append(line.decode()) # add last line to response set if it is not empty
-                        #print(F"Got Last Line: {line}")
+                        #print("Got Last Line: %s" % line)
                         line = b'' # clear the line buffer for the next line
 
                     #print("Got Last")
@@ -420,7 +420,7 @@ class Botvac():
                 elif val == b'\n': # NL, terminate the current line and add it to the response data list (comsData) (if it is not a blank line)
                     if len(line) > 0:
                         self.comsData.append(line.decode())
-                        #print(F"Got Last Line: {line}")
+                        #print("Got Last Line: %s" % line)
                         line = b'' # clear the bufer for the next line
 
                 else:
